@@ -10,31 +10,38 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
+import net.minecraft.entity.effect.StatusEffectInstance;
+import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 public class BackCommand implements Command<ServerCommandSource> {
 
-    public BackCommand() {}
+    public BackCommand() {
+    }
 
     @Override
     public int run(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        //Store command sender
+        // Store command sender
         ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
         PlayerData playerData = ((ServerPlayerEntityAccess) player).ec$getPlayerData();
 
-        //Get previous location
+        // Get previous location
         MinecraftLocation loc = playerData.getPreviousLocation();
 
-        //chat message
+        // chat message
         if (loc == null) {
             playerData.sendCommandError("cmd.back.error.no_prev_location");
             return 0;
         }
 
-        //Teleport player to home location
+        // Teleport player to home location
         var prevLocationName = ECText.access(player).getText("cmd.back.location_name");
         PlayerTeleporter.requestTeleport(playerData, loc, prevLocationName);
+
+        // Add invulnerability period
+        StatusEffectInstance invuln = new StatusEffectInstance(StatusEffects.RESISTANCE, 400, 255);
+        player.addStatusEffect(invuln);
 
         return SINGLE_SUCCESS;
     }
